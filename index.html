@@ -18,7 +18,7 @@
     <h1>US Unemployment Data Analysis</h1>
     <p>
     <h2 class="subtitle">Visualization based on US Unemployment Data Until 2018.</h2>
-    This chart gives unemployment trend from 1990-2000. This data is collected from US Labor of statistics. To analyze further you can go to next pages where per region and per state wise US unemployment trends are shown.
+    This chart gives unemployment trend from 1980-2000. This data is collected from US Labor of statistics. To analyze further you can go to next pages where per region and per state wise US unemployment trends are shown.
     </p>
     <h4>Mouse over to find out US unemployment rate at respective year</h4>  
 	<div id="vis-canvas"> 
@@ -202,7 +202,7 @@ lines.append("text")
             id: d.id,
             value: d.values[d.values.length - 1]}; })
     .attr("transform", function(d,i) {
-            console.log(xScale(d.value.year))
+        //    console.log(xScale(d.value.year))
             return "translate(" + (xScale(d.value.year) - 75)  
             + "," + (yScale(d.value.measurement) + 5 ) + ")";})
     .attr("x", 5)

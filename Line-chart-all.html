@@ -14,10 +14,13 @@
 <a class="internalLink" href="./index.html"> &lt;&lt;previous</a>
 <a class="internalLink" style="background-color: #a8a8a8">United States</a>
 <a class="internalLink" style="background-color: #f9b2b2;">Per Region</a> 
-<a class="internalLink" style="background-color: #a8a8a8;">State Wide</a> 
+<a class="internalLink" style="background-color: #a8a8a8;">State Wise</a> 
 <a class="internalLink" href="./scatter.html"> next&gt;&gt;</a>
 <h1>US Unemployment Data Analysis</h1>
 <h2 class="subtitle">Visualization based on US Unemployment Data Until 2018.</h2>
+<p>
+    This chart gives unemployment trend from 1980-2000. This data is collected from US Labor of statistics. To analyze further you can go to next pages where per state and US unemployment trends are shown.
+</p>
         <h4>Mouse over to find unemployment trend of each US Region</h4>    
 <div id="vis-canvas"> 
 
@@ -35,8 +38,8 @@
     const annotations = [
               {
                 note: {
-                  label: "Highest unemployment rate between 1990 and 2000!",
-                  title: "Year 1982"
+                  label: "South region had higest unemployment rate between 1980 and 2000!",
+                  title: "Year 1983"
                 },
                 type: d3.annotationLabel,
                 subject: {
@@ -67,7 +70,7 @@ d3.select("svg")
 
 //-----------------------------DATA------------------------------//
 
-const dataset = d3.csv("./emp-unemployment-3.csv");
+const dataset = d3.csv("./emp-unemployment-regions.csv");
 dataset.then(function(data) {
     const slices = data.columns.slice(1).map(function(id) {
         return {

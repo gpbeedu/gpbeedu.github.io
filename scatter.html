@@ -5,22 +5,24 @@
 		<meta name="author" content="Guru Beedu">
 		<meta name="description" content="">
 		<script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+		<script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
 		<link rel="stylesheet" type="text/css" href="styles.css">
 	<style></style>
 	</head>
-	<body>
+	<body style="width: 950px">
 		<div id="container" class="svg-container"></div>
 		<a class="internalLink" href="./Line-chart-all.html"> &lt;&lt;previous</a>
 		<a class="internalLink" style="background-color: #a8a8a8;">United States</a>
 		<a class="internalLink" style="background-color: #a8a8a8;">Per Region</a> 
-		<a class="internalLink" style="background-color: #f9b2b2;">State Wide</a> 
+		<a class="internalLink" style="background-color: #f9b2b2;">State Wise</a> 
 		<a class="internalLink" href="./index.html"> next&gt;&gt;</a>
     	<h1>US Unemployment Data Analysis</h1>
     	<h2 class="subtitle">Visualization based on US Unemployment Data Until 2018.</h2>
 		<div id="annotation-steps">
-			<div class="annotation-step" id="step3-annotation">
-          	<div class="annotation" id="step3-high-annotation" >
-	    		<h4>Mouse over to find out how states within each region contribues to unemplyment </h4>
+			<p>
+				This chart gives unemployment trend from 1980-2000. This data is collected from US Labor of statistics. To analyze further you can go to next pages where per region and US unemployment trends are shown.
+			</p>
+	    	<h4>Mouse over to find out unemployment state wise unemployment rate between 1980 to 2000 </h4>
         </div>      
 		<div id="vis-canvas"> 
 		<script>
@@ -37,7 +39,24 @@
 			.range([height, 0]);
 
 		var color = d3.scaleOrdinal(d3.schemeCategory10);
-
+		const annotations = [
+              {
+                note: {
+                  label: "West Virginia in South region had highest unemployment rate, which state is the lowest ?",
+                  title: "Year 1983"
+                },
+                type: d3.annotationLabel,
+                subject: {
+                  radius: 20,         // circle radius
+                  radiusPadding: 20   // white space around circle befor connector
+                },
+                color: ["black"],
+                x: 600,
+                y: 80,
+                dy: 0,
+                dx: 0
+              }
+            ]
 		// Add the svg canvas
 		var svg = d3.select("div#vis-canvas").append("svg")
 			.attr("width", width + margin.left + margin.right)
@@ -45,9 +64,15 @@
 		.append("g")
 			.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+		// Add annotation to the chart
+		const makeAnnotations = d3.annotation()
+    		.annotations(annotations)
+			d3.select("svg")
+    		.append("g")
+    		.call(makeAnnotations)
 		
 		// Get the data
-		const data = d3.csv("./emp-unemployment-3.csv");
+		const data = d3.csv("./emp-unemployment-trs.csv");
 		data.then(function(data) {
 			data.forEach(function(d) {
 				dummy = Object.keys(d);
@@ -57,7 +82,7 @@
 				};
 			});
 
-		console.log(data);
+		//console.log(data);
 		// Scale the range of the data
 		x.domain([1980, 2001]);
 		y.domain([0, 20]);
@@ -89,9 +114,13 @@
 			.style("text-anchor", "end")
 			.text("Unemployment Data (in percentage)");
 
+			const tooltip = d3.select("body").append("div")
+    			.attr("class", "tooltip")
+    			.style("opacity", 0)
+    			.style("position", "absolute");
 			
 		// Add the Scatterplot for every column
-		dummy = data.columns;
+		dummy = ["Northeast", "Midwest", "South", "West"];
 		//console.log(dummy);
 		const slices = data.columns.slice(1).map(function(id) {
 				return {
@@ -99,22 +128,35 @@
 					values: data.map(function(d){
 					//console.log(data);
 					var var_type = 0;
-						if ( id == "United States") {
+						if (id == "Connecticut" || id == "Maine" || id == "Massachusetts" ||
+							id == "New Hampshire" ||  id == "Rhode Island" || id == "Vermont" || 
+							id == "New Jersey" || id == "New York" || id == "Pennsylvania") {
+								var_type = 0;
+							} else if ( id == "Illinois" || id == "Indiana" || id == "Michigan" ||
+								id == "Ohio" || id == "Wisconsin" || id == "Iowa" || id == "Kansas" || id == "Minnesota" ||
+								id == "Missouri" || id == "Nebraska" || id == "North Dakota" || id == "South Dakota" )
+								{
 								var_type = 1;
-							} else if ( id == "Alabama") {
-								var_type = 2;
-							} else if (id == "Alaska") {
+							} else if (id == "Delaware" || id == "Florida" || id == "Georgia" || id == "Maryland" || id == "North Carolina" ||
+								id =="South Carolina" || id == "Virginia" || id == "West Virginia" || 
+								id =="Alabama" || id == "Kentucky" || id == "Mississippi" || id == "Tennessee" ||
+								id == "Arkansas" || id == "Louisiana" || id == "Oklahoma" || id == "Texas" ) {
+									var_type = 2;
+							} else if (id == "Arizona" || id == "Colorado" || id == "Idaho" || id == "Montana" || id == "Nevada" || 
+								id == "New Mexico"  || id == "Utah" || id == "Wyoming" || id == "Alaska" || id == "California" || 
+								id == "Hawaii" || id == "Oregon" || id == "Washington") {
 								var_type = 3;
-					}
+							}
 					return {
 						Year: d.Year,
 						type: var_type,
-						measurement: +d[id]
+						measurement: +d[id],
+						state:id
 					};
 					})
 				};
 		});
-
+		
 		svg.selectAll(".dot")
 			.data(slices)
 			.enter().append("g")
@@ -128,12 +170,19 @@
 			.attr("cy", function(d) { return y(d.measurement); })
 			.style("fill", function(d) { return color(d.type); })
 			.on("mouseover", function(d){
+				tooltip.transition()
+            		.delay(30)
+            		.duration(200)
+            		.style("opacity", 1);
 				d3.selectAll('.dot')
 					.filter(function(dot){ 
 						return (dot.type != d.type) 
 					})
 					.transition()
 					.style("opacity", 0.01)
+					tooltip.html(d.state +","+ d.measurement)
+        			.style("left", (d3.event.pageX + 25) + "px")
+        			.style("top", (d3.event.pageY) + "px");
 			})
 			.on("mouseout", function(d){
 				d3.selectAll('.dot')
@@ -162,7 +211,7 @@
 			.attr("y", 9)
 			.attr("dy", ".35em")
 			.style("text-anchor", "end")
-			.text(function(d,i) { return dummy[i+1]; });
+			.text(function(d,i) { return dummy[d]; });
 		});
 		</script>
   		</div>
