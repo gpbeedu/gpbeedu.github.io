@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+    <title>Final Project for CS 498 - Data Visualization Course</title>
+    <meta name="author" content="Guru Beedu">
+    <meta name="description" content="">
+    <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://rawgit.com/susielu/d3-annotation/master/d3-annotation.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="./styles.css">
+    <style></style>
+</head>
+<body style="width: 940px">
+    <div id="container" class="svg-container"></div>
+    <a class="internalLink" style="background-color: #f9b2b2;">United States</a>
+    <a class="internalLink" style="background-color: #a8a8a8;">Per Region</a> 
+    <a class="internalLink" style="background-color: #a8a8a8;">State Wise</a> 
+    <a class="internalLink" href="./line-chart-all.html"> next&gt;&gt;</a>
+    <h1>US Unemployment Data Analysis</h1>
+    <p>
+    <h2 class="subtitle">Visualization based on US Unemployment Data Until 2018.</h2>
+    This chart gives unemployment trend from 1990-2000. This data is collected from US Labor of statistics. To analyze further you can go to next pages where per region and per state wise US unemployment trends are shown.
+    </p>
+    <h4>Mouse over to find out US unemployment rate at respective year</h4>  
+	<div id="vis-canvas"> 
+<script>
+//------------------------1. PREPARATION-------------------------//
+//-----------------------------SVG-------------------------------//
+// Set the dimensions of the canvas / graph
+var margin = {top: 50, right: 20, bottom: 30, left: 80},
+    width = 940 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+const padding = 5;
+const adj = 30;
+// we are appending SVG first
+
+// Add the svg canvas
+var svg = d3.select("div#vis-canvas").append("svg")
+	    .attr("width", width + margin.left + margin.right)
+	    .attr("height", height + margin.top + margin.bottom)
+	  .append("g")
+	    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+//-----------------------------DATA------------------------------//
+
+const dataset = d3.csv("./emp-unemployment-usa.csv");
+dataset.then(function(data) {
+    const slices = data.columns.slice(1).map(function(id) {
+        return {
+            id: id,
+            values: data.map(function(d){
+                //console.log(data);
+                return {
+                    year: d.Year,
+                    measurement: +d[id]
+                };
+            })
+        };
+    });
+
+
+const annotations = [
+              {
+                note: {
+                  label: "Highest unemployment rate between 1990 and 2000!",
+                  title: "Year 1982"
+                },
+                type: d3.annotationLabel,
+                subject: {
+                  radius: 20,         // circle radius
+                  radiusPadding: 20   // white space around circle befor connector
+                },
+                color: ["black"],
+                x: 200,
+                y: 125,
+                dy: 0,
+                dx: 0
+              }
+            ]
+
+    // create a time scale for x-axis using d3.scaleTime()
+	var xScale = d3.scaleLinear().domain([1980, 2000]).range([0, width]);
+
+    // create a scale for the y axis
+	var yScale = d3.scaleLinear().domain([0, 20]).range([height, 0]);
+
+// Add annotation to the chart
+const makeAnnotations = d3.annotation()
+    .annotations(annotations)
+d3.select("svg")
+    .append("g")
+    .call(makeAnnotations)
+//-----------------------------AXES------------------------------//
+const yaxis = d3.axisLeft()
+    .ticks((slices[0].values).length)
+    .scale(yScale);
+
+const xaxis = d3.axisBottom()
+                .tickValues([1980, 1981, 1982, 1983, 1984, 1985,
+							1986, 1987, 1988, 1989, 1990, 1991,
+							1992, 1993, 1994, 1995, 1996, 1997,
+							1998, 1999, 2000])   
+                .scale(xScale);
+//----------------------------LINES------------------------------//
+
+const line = d3.line()
+    .x(function(d,i) { 
+        return xScale(d.year); })
+    .y(function(d) { return  yScale(d.measurement); });
+
+let id = 0;
+const ids = function () {
+    return "line-"+id++;
+}
+//---------------------------TOOLTIP----------------------------//
+const tooltip = d3.select("body").append("div")
+    .attr("class", "tooltip")
+    .style("opacity", 0)
+    .style("position", "absolute");
+
+
+//
+//-------------------------2. DRAWING----------------------------//
+svg.append("g")
+    .attr("class", "axis")
+    .attr("transform", "translate(0," + height + ")")
+    .call(xaxis)
+    .append("text")
+	.attr("class", "label")
+	.attr("x", width-30)
+	.attr("y", -6)
+	.style("text-anchor", "end")
+	.text("Year");
+ 
+
+svg.append("g")
+    .attr("class", "axis")
+    .call(yaxis)
+    .append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("dy", ".75em")
+    .attr("y", 6)
+    .style("text-anchor", "end")
+    .text("Unemployment Rate");
+//-----------------------------AXES------------------------------//
+
+//----------------------------LINES------------------------------//
+const lines = svg.selectAll("lines")
+    .data(slices)
+    .enter()
+    .append("g");
+
+    lines.append("path")
+    .attr("d", function(d) { return line(d.values); });
+
+//---------------------------POINTS-----------------------------// 
+lines.selectAll("points")
+    .data(function(d) {return d.values})
+    .enter()
+    .append("circle")
+    .attr("cx", function(d, i) { return xScale(d.year); })      
+    .attr("cy", function(d) { return yScale(d.measurement); })    
+    .attr("r", 5)
+    .attr("class","point")
+    .style("opacity", 0)
+    .on('mouseover', function(d) {
+        tooltip.transition()
+            .delay(30)
+            .duration(200)
+            .style("opacity", 1)
+
+        tooltip.html(d.measurement)
+        .style("left", (d3.event.pageX + 25) + "px")
+        .style("top", (d3.event.pageY) + "px");
+        const selection = d3.select(this).raise();
+
+        selection
+            .transition()
+            .delay("20")
+            .duration("200")
+            .attr("r", 6)
+            .style("opacity", 1)
+            .style("fill","#ed3700");
+        })  
+
+    .on("mouseout", function(d) {     
+        tooltip.transition()        
+        .duration(100)      
+        .style("opacity", 0);   
+    
+        const selection = d3.select(this);
+
+        selection
+            .transition()
+            .delay("20")
+            .duration("200")
+            .attr("r", 10)
+            .style("opacity", 0);
+    }); 
+lines.append("text")
+    .attr("class","serie_label")
+    .datum(function(d) {
+        return {
+            id: d.id,
+            value: d.values[d.values.length - 1]}; })
+    .attr("transform", function(d,i) {
+            console.log(xScale(d.value.year))
+            return "translate(" + (xScale(d.value.year) - 75)  
+            + "," + (yScale(d.value.measurement) + 5 ) + ")";})
+    .attr("x", 5)
+    .text(function(d) { return  d.id; });
+});
+
+</script>
+</div>
+</body>
